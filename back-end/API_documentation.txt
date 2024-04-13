@@ -1,0 +1,53 @@
+######################################################
+############API Structure#############################
+##########Record Management
+#/create_table 
+#/crm/
+#/crm/record
+#/crm/record [POST]
+#/crm/record/<string:code> [PUT]
+#/crm/record/search
+############Dropdown list############################
+#/crm/bo
+#/crm/bo [POST]
+#/crm/bo [DELETE]
+#/crm/category
+#/crm/category [POST]
+#/crm/category [DELETE]
+#/crm/contact_note
+#/crm/contact_note [POST]
+#/crm/contact_note [DELETE]
+#/crm/call_note 
+#/crm/call_note [POST]
+#/crm/call_note [DELETE]
+#/crm/zalo_note
+#/crm/zalo_note [POST]
+#/crm/zalo_note [DELETE]
+#/crm/tele_note 
+#/crm/tele_note [POST]
+#/crm/tele_note [DELETE]
+#/crm/sms_note 
+#/crm/sms_note [POST]
+#/crm/sms_note [PUT]
+#/crm/sms_note [DELETE]
+#/crm/social_note 
+#/crm/social_note [POST]
+#/crm/social_note [PUT]
+#/crm/social_note [DELETE]
+#/crm/interaction_content 
+#/crm/interaction_content [POST]
+#/crm/interaction_content [PUT]
+#/crm/interaction_content [DELETE]
+#/crm/interaction_result 
+#/crm/interaction_result [POST]
+#/crm/interaction_result [PUT]
+#/crm/interaction_result [DELETE]
+##############Tool/Resource Management##############
+#/crm/tool_mgt
+#/crm/tool_mgt [POST]
+#/crm/tool_mgt [PUT]
+##############Member Management####################
+#crm/user
+#crm/user [POST]
+#crm/user [PUT]
+#crm/user [DELETE]

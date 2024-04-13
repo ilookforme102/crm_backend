@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, session, make_response,redirect, url_for
+from flask import Flask, jsonify, request, session, make_response,redirect, url_for,Blueprint
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Date, and_
 import datetime
@@ -26,55 +26,71 @@ class User(db.Model):
     team = db.Column(db.String(255), nullable = False)
     def __repr__(self):
         return f'<User {self.username}>'
-    
+###################################################################################
+#######################Data model for dropdown list display as an option for data fill-in
+#List BO code    
 class BO(db.Model):
     __tablename__ = 'db_vn168_crm_bo'
-    bo_code = db.Column(db.String(255), primary_key = True,unique = True, nullable = False)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    bo_code = db.Column(db.String(255), unique = True, nullable = False)
     def __repr__(self):
         return self.bo_code
+#List category
 class Category(db.Model):
     __tablename__ = 'db_vn168_crm_category'
-    category = db.Column(db.String(255),primary_key = True, unique = True, nullable = False)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    category = db.Column(db.String(255), unique = True, nullable = False)
     def __repr__(self):
         return self.category
+#List contact node
 class Contact_Note(db.Model):
     __tablename__ = 'db_vn168_crm_contact_note'
-    note = db.Column(db.String(255),primary_key = True, unique = True, nullable = False)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    note = db.Column(db.String(255), unique = True, nullable = False)
     def __repr__(self):
         return self.note
+#List of call note
 class Call_Note(db.Model):
     __tablename__ = 'db_vn168_crm_call_note'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     call_note = db.Column(db.String(255), primary_key = True,unique = True, nullable = False)
     def __repr__(self):
         return self.call_note
+#########
 class Zalo_Note(db.Model):
     __tablename__ = 'db_vn168__crm_zalo_note'
-    zalo_note= db.Column(db.String(255),primary_key = True, unique = True, nullable = False)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    zalo_note= db.Column(db.String(255), unique = True, nullable = False)
     def __repr__(self):
         return self.zalo_note
 class Tele_Note(db.Model):
     __tablename__ = 'db_vn168__crm_tele_note'
-    tele_note= db.Column(db.String(255),primary_key = True, unique = True, nullable = False)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    tele_note= db.Column(db.String(255),unique = True, nullable = False)
     def __repr__(self):
         return self.tele_note
 class SMS_Note(db.Model):
     __tablename__ = 'db_vn168__crm_sms_note'
-    sms_note= db.Column(db.String(255),primary_key = True, unique = True, nullable = False)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    sms_note= db.Column(db.String(255),unique = True, nullable = False)
     def __repr__(self):
         return self.sms_note
 class Social_Note(db.Model):
     __tablename__ = 'db_vn168__crm_social_note'
-    social_note= db.Column(db.String(255),primary_key = True, unique = True, nullable = False)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    social_note= db.Column(db.String(255), unique = True, nullable = False)
     def __repr__(self):
         return self.social_note
 class Interaction_Content(db.Model): #Something called Nội dung tương tác
     __tablename__ = 'db_vn168__interaction_content'
-    interaction_content= db.Column(db.String(255),primary_key = True, unique = True, nullable = False)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    interaction_content= db.Column(db.String(255),unique = True, nullable = False)
     def __repr__(self):
         return self.interaction_content
 class Interaction_Result(db.Model): #Something called Nội dung tương tác
     __tablename__ = 'db_vn168__crm_interaction_result'
-    result= db.Column(db.String(255),primary_key = True, unique = True, nullable = False)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    result= db.Column(db.String(255),unique = True, nullable = False)
     def __repr__(self):
         return self.result 
 class Customers(db.Model):
@@ -93,14 +109,85 @@ class Customers(db.Model):
     filled_date = db.Column(Date, nullable = False)
     assistant = db.Column(db.String(255))
     def __repr__(self):
-        return self.result
+        return self.code
+####Data model for tools management
+#####SIM########
+class Sim(db.Model):
+    __tablename__ = 'db_vn168_crm_sim'
+    sim_code = db.Column(db.String(255), primary_key = True, unique = True, nullable = False)
+    number = db.Column(db.String(255), nullable = False)
+    provider = db.Column(db.String(255))
+    status = db.Column(db.String(255)) #Trạng thái
+    package = db.Column(db.String(255))
+    zalo_status = db.Column(db.String(255))
+    tele_status = db.Column(db.String(255))
+    tik_face_status = db.Column(db.String(255))
+    sms_status = db.Column(db.String(255))
+    storage_address = db.Column(db.String(255))
+    sim_note = db.Column(db.String(255))
+    def __repr__(self):
+        return self.sim_code
+#####IP###############
+class IP(db.Model):
+    __tablename__ = 'db_vn168_crm_ip'
+    ip_code = db.Column(db.String(255), primary_key = True, unique = True, nullable = False)
+    ip_info = db.Column(db.String(255), nullable = False)
+    expired_date = db.Column(db.String(255))
+    country = db.Column(db.String(255))
+    provider = db.Column(db.String(255))
+    status = db.Column(db.String(255))
+    day_until_expiration = db.Column(db.String(255))
+    zalo_note = db.Column(db.String(255))
+    ip_note = db.Column(db.String(255))
+#######Phone##################
+class Phone(db.Model):
+    __tablename__ = 'db_vn168_crm_phone'
+    device_code = db.Column(db.String(255), primary_key = True, unique = True, nullable = False)
+    num_zalo_acc_created = db.Column(db.String(255))
+    num_zalo_acc_active = db.Column(db.String(255))
+    num_zalo_acc_active = db.Column(db.String(255))
+    online = db.Column(db.String(255))
+    online_cls = db.Column(db.String(255))
+    online_nkb = db.Column(db.String(255))
+    online_agency = db.Column(db.String(255))
+    num_sim = db.Column(db.Integer)
+    number1 = db.Column(db.String(255))
+    number2 = db.Column(db.String(255))
+    phone_note = db.Column(db.String(255))
+    
+#######Data model for all contact method including zalo, tele, faceboook , tiktok
+######Tool######################################################################
+class Tool_Mgt(db.Model):
+    __tablename__ = 'db_vn168_crm_tool_mgt'
+    code = db.Column(db.String(255), primary_key = True, unique = True, nullable = False)
+    category = db.Column(db.String(255))
+    person_in_charge = db.Column(db.String(255))
+    acc_note = db.Column(db.String(255))
+    username = db.Column(db.String(255))
+    password = db.Column(db.String(255))
+    username = db.Column(db.String(255))
+    acc_info = db.Column(db.String(255))
+    acc_note = db.Column(db.String(255))
+    ip_address = db.Column(db.String(255))
+    note = db.Column(db.String(255))
+######Using Flask Blueprints to create hierarchical API endpoints#####
+#Declare blueprint for CRM team
+crm_bp = Blueprint('crm_bp', __name__, url_prefix='/crm')
+social_bp = Blueprint('social_bp', __name__, url_prefix='/social')
+dev_bp = Blueprint('dev_bp', __name__, url_prefix='/dev')
+seo_bp = Blueprint('seo_bp', __name__, url_prefix='/seo')
+
+##################################################
+##Create aall tables that defined above
 @app.route('/create_tables')
 def create_tables():
     with app.app_context():
         db.create_all() 
-    return 'Hello world'
-@app.route('/get_all_users')
-def get_all_users():
+    return 'All tables are created successfully'
+#############################################################
+#Show all record
+@crm_bp.route('/record')
+def get_records():
     # users = Customers.query.all()
     customers = Customers.query.all()
     # user_data = [{'username':user.username, 'role':user.role,'company_id':user.company_id,'nickname':user.company_name,'team':user.team} for user in users]
@@ -108,7 +195,7 @@ def get_all_users():
     return customer_data
 ################################################
 ##Save new record of customer to the Customer table
-@app.route('/record', methods=['POST'])
+@crm_bp.route('/record', methods=['POST'])
 def add_record():
     if not request.form:
         return jsonify({"error": "Missing JSON in request"}), 400
@@ -137,7 +224,7 @@ def add_record():
         db.session.rollback()  # Roll back the transaction if an error occurs
         return str(e)
 #####Edit value for a specific code in Customer table
-@app.route('/record/<string:code>',methods = ['PUT'])
+@crm_bp.route('/record/<string:code>',methods = ['PUT'])
 def edit_record(code):
     #######################
     # Get method perform a query filtering on the primary key
@@ -174,7 +261,20 @@ def edit_record(code):
             'assistant' : record.assistant,
         }
     }), 200
-@app.route('/filter_data', methods=['POST'])
+#######Delete record#############
+@crm_bp.route('/record/<string:code>',methods = ['DELETE'])
+def remove_record(code):
+    record = Customers.query.get(code)
+    if record:
+        db.session.delete(record)
+        db.session.commit()
+        return jsonify({'message': 'Record deleted successfully'})
+    else:
+        # If the user does not exist, return a 404 error
+        return jsonify({'error': 'Record not found'}), 404
+
+#####Filter data box
+@crm_bp.route('/record/search', methods=['POST'])
 def filter_data():
     if not request.form:
         return jsonify({"error": "Please fill in the form for searching"}), 400
@@ -205,26 +305,165 @@ def filter_data():
         return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
 
     # Query the database for customers matching the username and date
-    customers = Customers.query.filter(and_(Customers.username == username,
-                                            Customers.category == category,
-                                            Customers.bo_code == bo_code,
-                                            Customers.call_note == call_note,
-                                            Customers.zalo_note == zalo_note,
-                                            Customers.tele_note == tele_note,
-                                            Customers.social_note == social_note,
-                                            Customers.person_in_charge == person_in_charge,
-                                            Customers.interaction_content == interaction_content,
-                                            Customers.interaction_result == interaction_result,
-                                            Customers.assistant == assistant,
-                                            Customers.code == code,
-                                            Customers.filled_date == end_date,
-                                            Customers.filled_date == end_date)).all()
+    customers = Customers.query.filter(
+        and_(
+            Customers.username.like(f'%{username}%'),
+            Customers.category.like(f'%{category}%'),
+            Customers.bo_code.like(f'%{bo_code}%'),
+            Customers.call_note.like(f'%{call_note}%'),
+            Customers.zalo_note.like(f'%{zalo_note}%'),
+            Customers.tele_note.like(f'%{tele_note}%'),
+            Customers.social_note.like(f'%{social_note}%'),
+            Customers.person_in_charge.like(f'%{person_in_charge}%'),
+            Customers.interaction_content.like(f'%{interaction_content}%'),
+            Customers.interaction_result.like(f'%{interaction_result}%'),
+            Customers.assistant.like(f'%{assistant}%'),
+            Customers.code.like(f'%{code}%'),
+            Customers.filled_date <= end_date,
+            Customers.filled_date >= start_date)).all()
 
     # Format results
-    results = [{'username': customer.username, 'registration_date': customer.filled_date.isoformat()} for customer in customers]
+    results = [{'username': customer.username,'category': customer.category, 'filled_date': customer.filled_date.isoformat()} for customer in customers]
+    sorted_results =  sorted(results, key =  lambda x: x['filled_date'], reverse= True)
+    return jsonify(sorted_results)
+#############################################
+#################Dropdown List###############
+#/crm/bo
+#/crm/bo [POST]
+#/crm/bo [DELETE]
+@crm_bp.route('/bo')
+def get_bo():
+    boes = BO.query.all()
+    # user_data = [{'username':user.username, 'role':user.role,'company_id':user.company_id,'nickname':user.company_name,'team':user.team} for user in users]
+    bo_data = [{'code':bo.bo_code} for bo in boes]
+    return bo_data
 
-    return jsonify(results)
-@app.route('/test', methods = ['POST'])
+#add multiple value to bo code
+@crm_bp.route('/bo',methods = ['POST'])
+def add_bo():
+    try:
+        data = request.json  # JSON payload containing data for new BO
+        if not data or not isinstance(data, list):
+            return jsonify({'error': 'Invalid JSON data'}), 400
+
+        for bo in data:
+            # Validate data (e.g., check if bo_code is provided)
+            if 'bo_code' not in bo:
+                return jsonify({'error': 'bo_code is required for each BO'}), 400
+
+            # Create a new BO object and add it to the session
+            new_bo = BO(bo_code= bo['bo_code'])
+            db.session.add(new_bo)
+
+        # Commit the changes to the database
+        db.session.commit()
+        return jsonify({'message': 'Users added successfully'}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+@crm_bp.route('/bo/<string:bo_code>',methods = ['DELETE'])
+def remove_bo(bo_code):
+    code = BO.query.get(bo_code)
+    if code:
+        db.session.delete(code)
+        db.session.commit()
+        return jsonify({'message':'bo code removed successfully'})
+    else:
+        return jsonify({'error':'bo code not found'}),404
+#/crm/category
+#/crm/category [POST]
+#/crm/category [DELETE]
+@crm_bp.route('/category')
+def show_category():
+    categories =  Category.query.all()
+    categoy_data =  [{'category': category.category} for category in categories]
+    return categoy_data
+@crm_bp.route('/category', methods= ['POST'])
+def add_category():
+    try:
+        data = request.json
+        if not data or not isinstance(data, list):
+            return jsonify({'error': 'Invalid JSON data'})
+        for category in data:
+            if 'category'  not in category:
+                return jsonify({'error':'category is require for each category table'})
+            new_category = Category(category = category['category'])
+            db.session.add(new_category)
+        db.session.commit()
+        return jsonify({'message':'Category added successfully'}),201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error':str(e)}),500
+@crm_bp.route('/category/<string:category>', methods= ['DELETE'])
+def remove_category(category):
+    category_name = Category.query.get(category)
+    if category_name:
+        db.session.delete(category_name)
+        db.session.commit()
+        return jsonify({'message': 'Category removed successfully'})
+    else:
+        return jsonify({'error':'category not found'}),404
+#/crm/contact_note
+#/crm/contact_note [POST]
+#/crm/contact_note [DELETE]
+
+
+
+
+
+#Skip to login enpoint
+# Dummy user database (for demonstration purposes)
+users = {
+    'user1': {'password': 'password1'},
+    'user2': {'password': 'password2'},
+}
+
+# Middleware to check if the user is authenticated
+@app.before_request
+def check_authentication():
+    if request.endpoint != 'login' and 'username' not in session:
+        return redirect(url_for('login'))
+
+# Login endpoint
+@app.route('/login', methods=['POST', 'GET'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        if not username or not password:
+            return jsonify({'error': 'Username and password are required'}), 400
+
+        if username in users and users[username]['password'] == password:
+            session['username'] = username
+            return redirect(url_for('loggedin'))
+        else:
+            return jsonify({'error': 'Invalid username or password'}), 401
+
+    return '''
+        <form method="post">
+            <p><input type="text" name="username" placeholder="Username"></p>
+            <p><input type="password" name="password" placeholder="Password"></p>
+            <p><input type="submit" value="Login"></p>
+        </form>
+    '''
+
+# Logout endpoint
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    return redirect(url_for('login'))
+
+# Index page
+@app.route('/loggedin')
+def loggedin():
+    return jsonify({'message': 'Welcome, {}!'.format(session['username'])})
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+@crm_bp.route('/test', methods = ['POST'])
 def test():
     data = request.form
     date_string  = data.get('date')
@@ -233,14 +472,14 @@ def test():
     test_list = [{'username': customer.username, 'datre': customer.filled_date >= date_obj} for customer in customers]
     # return {'str':date_obj}
     return test_list
-@app.route('/')
+@crm_bp.route('/')
 def home():
     return "Home Page"
-@app.route('/api/data')
+@crm_bp.route('/api/data')
 def get_data():
     data = {'message': 'Hello from the backend!'}
     return jsonify(data)
-@app.route('/api/users', methods=['GET', 'POST'])
+@crm_bp.route('/api/users', methods=['GET', 'POST'])
 def users():
     if request.method == 'GET':
         # Implement logic to fetch users from the database
@@ -248,8 +487,12 @@ def users():
     elif request.method == 'POST':
         # Implement logic to create a new user in the database
         pass
-@app.route('/index')
+@crm_bp.route('/index')
 def index():
     return {"name":"sang"}
+app.register_blueprint(crm_bp)
+app.register_blueprint(social_bp)
+app.register_blueprint(dev_bp)
+app.register_blueprint(seo_bp)
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
