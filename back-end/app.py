@@ -406,18 +406,36 @@ def remove_category(category):
 #/crm/contact_note
 #/crm/contact_note [POST]
 #/crm/contact_note [DELETE]
-
-
-
-
-
-#Skip to login enpoint
-# Dummy user database (for demonstration purposes)
-users = {
-    'user1': {'password': 'password1'},
-    'user2': {'password': 'password2'},
-}
-
+#Skip to User Managemenet enpoints
+def get_users():
+    users = User.query.all()
+    # user_data = [{'username':user.username, 'role':user.role,'company_id':user.company_id,'nickname':user.company_name,'team':user.team} for user in users]
+    user_data = {user.username: {'password': user.password} for user in users}
+    return user_data
+#Add user, not register
+@app.route('/add_user', methods=['POST'])
+def register():
+    users  =  get_users()
+    if not request.form:
+        return jsonify({"error": "Missing JSON in request"}), 400
+    data = request.form
+    username = data.get('username')
+    password = data.get('username')
+    company_name = data.get('company_name')
+    company_id = data.get('company_id')
+    role = data.get('role')
+    team = data.get('team')
+    # Check if the user already exists
+    if User.query.filter((User.username == username)).first():
+        return jsonify({"error": "User is already existed, please try again"}), 409
+    new_user = Customers(username=username,password=password,company_name=company_name,company_id=company_id,role=role,team=team)
+    db.session.add(new_user)
+    try:
+        db.session.commit()
+        return "User added successfully!"
+    except Exception as e:
+        db.session.rollback()  # Roll back the transaction if an error occurs
+        return str(e)
 # Middleware to check if the user is authenticated
 @app.before_request
 def check_authentication():
@@ -425,15 +443,16 @@ def check_authentication():
         return redirect(url_for('login'))
 
 # Login endpoint
+
 @app.route('/login', methods=['POST', 'GET'])
 def login():
+    users = get_users()
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-
+        
         if not username or not password:
             return jsonify({'error': 'Username and password are required'}), 400
-
         if username in users and users[username]['password'] == password:
             session['username'] = username
             return redirect(url_for('loggedin'))
@@ -442,10 +461,16 @@ def login():
 
     return '''
         <form method="post">
-            <p><input type="text" name="username" placeholder="Username"></p>
-            <p><input type="password" name="password" placeholder="Password"></p>
-            <p><input type="submit" value="Login"></p>
-        </form>
+        <div>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <button type="submit">Login</button>
+    </form>
     '''
 
 # Logout endpoint
@@ -458,9 +483,6 @@ def logout():
 @app.route('/loggedin')
 def loggedin():
     return jsonify({'message': 'Welcome, {}!'.format(session['username'])})
-
-if __name__ == '__main__':
-    app.run(debug=True)
 
 
 @crm_bp.route('/test', methods = ['POST'])

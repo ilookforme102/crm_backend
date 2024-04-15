@@ -47,7 +47,10 @@
 #/crm/tool_mgt [POST]
 #/crm/tool_mgt [PUT]
 ##############Member Management####################
-#crm/user
-#crm/user [POST]
-#crm/user [PUT]
-#crm/user [DELETE]
+#/user
+#/user [POST]
+#/user [PUT]
+#/user [DELETE]
+#/user/register [POST]
+#/user/login [GET,POST]
+#/user/logout\
