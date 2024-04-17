@@ -54,3 +54,5 @@
 #/user/register [POST]
 #/user/login [GET,POST]
 #/user/logout\
+###############IN-and-OUT############
+#/show_session 

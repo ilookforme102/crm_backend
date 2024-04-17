@@ -5,10 +5,10 @@ import datetime
 app = Flask(__name__)
 app.secret_key = 'f33924fea4dd7123a0daa9d2a7213679'
 # Replace the following values with your database connection details
-db_username = 'sql_dabanhtructi'
-db_password = 'FKb75AYJzFMJET8F'
-db_host = '128.199.228.235'
-db_database = 'sql_dabanhtructi'
+db_username = 'crm'
+db_password = 'LSciYCtCK7tZXAxL'
+db_host = '23.226.8.83'
+db_database = 'crm'
 db_port = 3306
 app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{db_username}:{db_password}@{db_host}/{db_database}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -414,28 +414,29 @@ def get_users():
     return user_data
 #Add user, not register
 @app.route('/add_user', methods=['POST'])
-def register():
-    users  =  get_users()
-    if not request.form:
-        return jsonify({"error": "Missing JSON in request"}), 400
-    data = request.form
-    username = data.get('username')
-    password = data.get('username')
-    company_name = data.get('company_name')
-    company_id = data.get('company_id')
-    role = data.get('role')
-    team = data.get('team')
-    # Check if the user already exists
-    if User.query.filter((User.username == username)).first():
-        return jsonify({"error": "User is already existed, please try again"}), 409
-    new_user = Customers(username=username,password=password,company_name=company_name,company_id=company_id,role=role,team=team)
-    db.session.add(new_user)
-    try:
-        db.session.commit()
-        return "User added successfully!"
-    except Exception as e:
-        db.session.rollback()  # Roll back the transaction if an error occurs
-        return str(e)
+def add_user():
+    if 'role' in session and session['role'] == 'CEO':
+        users  =  get_users()
+        if not request.form:
+            return jsonify({"error": "Missing JSON in request"}), 400
+        data = request.form
+        username = data.get('username')
+        password = data.get('username')
+        company_name = data.get('company_name')
+        company_id = data.get('company_id')
+        role = data.get('role')
+        team = data.get('team')
+        # Check if the user already exists
+        if User.query.filter((User.username == username)).first():
+            return jsonify({"error": "User is already existed, please try again"}), 409
+        new_user = User(username=username,password=password,company_name=company_name,company_id=company_id,role=role,team=team)
+        db.session.add(new_user)
+        try:
+            db.session.commit()
+            return "User added successfully!"
+        except Exception as e:
+            db.session.rollback()  # Roll back the transaction if an error occurs
+            return str(e)
 # Middleware to check if the user is authenticated
 @app.before_request
 def check_authentication():
@@ -455,6 +456,8 @@ def login():
             return jsonify({'error': 'Username and password are required'}), 400
         if username in users and users[username]['password'] == password:
             session['username'] = username
+            role = User.query.get(session['username']).role
+            session['role'] = role
             return redirect(url_for('loggedin'))
         else:
             return jsonify({'error': 'Invalid username or password'}), 401
@@ -482,17 +485,19 @@ def logout():
 # Index page
 @app.route('/loggedin')
 def loggedin():
-    return jsonify({'message': 'Welcome, {}!'.format(session['username'])})
+    # role = User.query.get.filter(User.role == session['username'])
+    return jsonify({'message': 'Welcome, {},you are logging in as {}!'.format(session['username'],session['role'])})#session['username']
 
 
-@crm_bp.route('/test', methods = ['POST'])
+@crm_bp.route('/test')
 def test():
-    data = request.form
-    date_string  = data.get('date')
-    date_obj = datetime.datetime.strptime(date_string, '%Y-%m-%d').date()
-    customers = Customers.query.filter(Customers.username == 'shangđasdasđsd')
-    test_list = [{'username': customer.username, 'datre': customer.filled_date >= date_obj} for customer in customers]
-    # return {'str':date_obj}
+    # data = request.form
+    # date_string  = data.get('date')
+    # date_obj = datetime.datetime.strptime(date_string, '%Y-%m-%d').date()
+    # customers = Customers.query.filter(Customers.username == 'shangđasdasđsd')
+    # test_list = [{'username': customer.username, 'datre': customer.filled_date >= date_obj} for customer in customers]
+    # # return {'str':date_obj}
+    test_list = []
     return test_list
 @crm_bp.route('/')
 def home():
