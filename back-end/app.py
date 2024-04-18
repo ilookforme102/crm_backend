@@ -1,8 +1,10 @@
 from flask import Flask, jsonify, request, session, make_response,redirect, url_for,Blueprint
 from flask_sqlalchemy import SQLAlchemy
+# from flask_cors import CORS
 from sqlalchemy import Date, and_
-import datetime
+from datetime import datetime, timezone, timedelta
 app = Flask(__name__)
+# CORS(app)
 app.secret_key = 'f33924fea4dd7123a0daa9d2a7213679'
 # Replace the following values with your database connection details
 db_username = 'crm'
@@ -110,6 +112,24 @@ class Customers(db.Model):
     assistant = db.Column(db.String(255))
     def __repr__(self):
         return self.code
+class Edit_Customer_Records(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    created_at = db.Column(db.DateTime,  nullable=False, default = datetime.timestamp(datetime.now()))
+    code = db.Column(db.String(255),  nullable = False)
+    username = db.Column(db.String(255), nullable = False)
+    category = db.Column(db.String(255), nullable = False)
+    bo_code = db.Column(db.String(255), nullable = False)
+    call_note = db.Column(db.String(255), nullable = False)
+    zalo_note = db.Column(db.String(255), nullable = False)
+    tele_note = db.Column(db.String(255),nullable = False)
+    social_note = db.Column(db.String(255),nullable = False)
+    interaction_content = db.Column(db.String(255), nullable = False)
+    interaction_result = db.Column(db.String(255), nullable = False)
+    person_in_charge = db.Column(db.String(255), nullable = False)
+    filled_date = db.Column(Date, nullable = False)
+    assistant = db.Column(db.String(255))
+    def __repr__(self):
+        return self.created_at
 ####Data model for tools management
 #####SIM########
 class Sim(db.Model):
@@ -165,12 +185,17 @@ class Tool_Mgt(db.Model):
     acc_note = db.Column(db.String(255))
     username = db.Column(db.String(255))
     password = db.Column(db.String(255))
-    username = db.Column(db.String(255))
     acc_info = db.Column(db.String(255))
-    acc_note = db.Column(db.String(255))
     ip_address = db.Column(db.String(255))
     note = db.Column(db.String(255))
-######Using Flask Blueprints to create hierarchical API endpoints#####
+####Employee session management table#########################
+class Session_Mgt(db.Model):
+    __tablename__ = 'db_vn168_crm_session_mgt'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    username = db.Column(db.String(255))
+    checkin_time = db.Column(Date, nullable = False)
+    checkout_time = db.Column(Date, nullable = False)
+#####Using Flask Blueprints to create hierarchical API endpoints#####
 #Declare blueprint for CRM team
 crm_bp = Blueprint('crm_bp', __name__, url_prefix='/crm')
 social_bp = Blueprint('social_bp', __name__, url_prefix='/social')
@@ -212,10 +237,11 @@ def add_record():
     interaction_content = data.get('interaction_content')
     interaction_result = data.get('interaction_result')
     assistant = data.get('assistant')
+    filled_date = datetime.now().strftime("%Y-%m-%d")
     # Check if the user already exists
     if Customers.query.filter((Customers.code == code)).first():
         return jsonify({"error": "Code is already existed, please try again"}), 409
-    new_customer = Customers(code= code, username=username,category=category,bo_code=bo_code,call_note=call_note,zalo_note=zalo_note,tele_note=tele_note,social_note=social_note,person_in_charge = person_in_charge,interaction_content=interaction_content, interaction_result = interaction_result,assistant = assistant)
+    new_customer = Customers(code= code, username=username,category=category,bo_code=bo_code,call_note=call_note,zalo_note=zalo_note,tele_note=tele_note,social_note=social_note,interaction_content=interaction_content, interaction_result = interaction_result, person_in_charge = person_in_charge,filled_date = filled_date,assistant = assistant)
     db.session.add(new_customer)
     try:
         db.session.commit()
@@ -406,17 +432,35 @@ def remove_category(category):
 #/crm/contact_note
 #/crm/contact_note [POST]
 #/crm/contact_note [DELETE]
+
+
+
 #Skip to User Managemenet enpoints
-def get_users():
+@app.route('/user/<string:username>', methods = ['DELETE'])
+def remove_user(username):
+    if 'role' in session and session['role']:
+        username = Customers.query.get(username)
+        if username:
+            db.session.delete(username)
+            db.session.commit()
+            return jsonify({'message': 'User deleted successfully'})
+        else:
+            # If the user does not exist, return a 404 error
+            return jsonify({'error': 'Record not found'}), 404
+    else:
+        return  jsonify({'error': 'unauthenticated login'}), 401
+ 
+@app.route('/user')
+def show_users():
     users = User.query.all()
     # user_data = [{'username':user.username, 'role':user.role,'company_id':user.company_id,'nickname':user.company_name,'team':user.team} for user in users]
-    user_data = {user.username: {'password': user.password} for user in users}
+    user_data = {user.username: {'role': user.role,'company_id': user.company_id,'company_id': user.company_id,'company_name': user.company_name,'team': user.team} for user in users}
     return user_data
 #Add user, not register
 @app.route('/add_user', methods=['POST'])
 def add_user():
     if 'role' in session and session['role'] == 'CEO':
-        users  =  get_users()
+        # users  =  get_users()
         if not request.form:
             return jsonify({"error": "Missing JSON in request"}), 400
         data = request.form
@@ -440,14 +484,19 @@ def add_user():
 # Middleware to check if the user is authenticated
 @app.before_request
 def check_authentication():
-    if request.endpoint != 'login' and 'username' not in session:
+    session_cookie = request.cookies.get('session') 
+    if request.endpoint != 'login' and 'username' not in session and session_cookie != True:
         return redirect(url_for('login'))
 
 # Login endpoint
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
-    users = get_users()
+    session.permanent = True
+    app.permanent_session_lifetime = timedelta(minutes=5)
+    user_data = User.query.all()
+    users = {user.username: {'password': user.password} for user in user_data}
+
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
@@ -458,35 +507,23 @@ def login():
             session['username'] = username
             role = User.query.get(session['username']).role
             session['role'] = role
-            return redirect(url_for('loggedin'))
+            return jsonify({'message': 'Welcome, {},you are logging in as {}!'.format(session['username'],session['role'])})#session['username']
         else:
             return jsonify({'error': 'Invalid username or password'}), 401
 
-    return '''
-        <form method="post">
-        <div>
-            <label for="username">Username:</label>
-            <input type="text" id="username" name="username" required>
-        </div>
-        <div>
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required>
-        </div>
-        <button type="submit">Login</button>
-    </form>
-    '''
+    return  jsonify({'error': 'unauthenticated login'}), 401
 
 # Logout endpoint
 @app.route('/logout')
 def logout():
     session.pop('username', None)
-    return redirect(url_for('login'))
+    return jsonify({'message': 'logged out!'})
 
 # Index page
-@app.route('/loggedin')
-def loggedin():
-    # role = User.query.get.filter(User.role == session['username'])
-    return jsonify({'message': 'Welcome, {},you are logging in as {}!'.format(session['username'],session['role'])})#session['username']
+# @app.route('/loggedin')
+# def loggedin():
+#     # role = User.query.get.filter(User.role == session['username'])
+#     return jsonify({'message': 'Welcome, {},you are logging in as {}!'.format(session['username'],session['role'])})#session['username']
 
 
 @crm_bp.route('/test')
