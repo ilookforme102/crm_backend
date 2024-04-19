@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 # from flask_cors import CORS
 from sqlalchemy import Date, and_
 from datetime import datetime, timezone, timedelta
+import json
 app = Flask(__name__)
 # CORS(app)
 app.secret_key = 'f33924fea4dd7123a0daa9d2a7213679'
@@ -101,6 +102,7 @@ class Customers(db.Model):
     username = db.Column(db.String(255), nullable = False)
     category = db.Column(db.String(255), nullable = False)
     bo_code = db.Column(db.String(255), nullable = False)
+    contact_note = db.Column(db.String(255), nullable = False)
     call_note = db.Column(db.String(255), nullable = False)
     zalo_note = db.Column(db.String(255), nullable = False)
     tele_note = db.Column(db.String(255),nullable = False)
@@ -214,10 +216,84 @@ def create_tables():
 @crm_bp.route('/record')
 def get_records():
     # users = Customers.query.all()
-    customers = Customers.query.all()
+    query = Customers.query
+    data = request.args
+    page = int(data.get('page','1'))
+    per_page = int(data.get('per_page','10'))
+    start_index = (page - 1) * per_page
+    end_index = start_index + per_page
+    code = data.get('code')
+    username = data.get('username')
+    category = data.get('category')
+    bo_code = data.get('bo_code')
+    contact_note = data.get('contact_note')
+    call_note = data.get('call_note')
+    zalo_note = data.get('zalo_note')
+    tele_note = data.get('tele_note')
+    social_note = data.get('social_note')
+    person_in_charge = data.get('person_in_charge')
+    interaction_content = data.get('interaction_content')
+    interaction_result = data.get('interaction_result')
+    assistant = data.get('assistant')
+    start_date_str = data.get('start_date_str')
+    end_date_str = data.get('end_date_str')
+    try:
+        # Parse the date string into a date object
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+    except TypeError:
+        start_date = datetime.strptime('2000-01-01', '%Y-%m-%d').date()
+        end_date = datetime.now().date()+ timedelta(days=10)
+    # Query the database for customers matching the username and date
+    param_mapping = {
+            'username': Customers.username.like(f'%{username}%'),
+            'category':Customers.category.like(f'%{category}%'),
+            'bo_code':Customers.bo_code.like(f'%{bo_code}%'),
+            'contact_note':Customers.contact_note.like(f'%{contact_note}%'),
+            'call_note':Customers.call_note.like(f'%{call_note}%'),
+            'zalo_note':Customers.zalo_note.like(f'%{zalo_note}%'),
+            'tele_note':Customers.tele_note.like(f'%{tele_note}%'),
+            'social_note':Customers.social_note.like(f'%{social_note}%'),
+            'person_in_charge':Customers.person_in_charge.like(f'%{person_in_charge}%'),
+            'interaction_content':Customers.interaction_content.like(f'%{interaction_content}%'),
+            'interaction_result':Customers.interaction_result.like(f'%{interaction_result}%'),
+            'assistant':Customers.assistant.like(f'%{assistant}%'),
+            'code':Customers.code.like(f'%{code}%'),
+            'end_date':Customers.filled_date <= end_date,
+            'start_date':Customers.filled_date >= start_date
+    }
+    for key, value in param_mapping.items():
+        if key in data:
+            query = query.filter(value)
+
+    customers =  query.all()
+    # customers = Customers.query.filter(
+    #     and_(
+    #         Customers.username.like(f'%{username}%'),
+    #         Customers.category.like(f'%{category}%'),
+    #         Customers.bo_code.like(f'%{bo_code}%'),
+    #         Customers.call_note.like(f'%{call_note}%'),
+    #         Customers.zalo_note.like(f'%{zalo_note}%'),
+    #         Customers.tele_note.like(f'%{tele_note}%'),
+    #         Customers.social_note.like(f'%{social_note}%'),
+    #         Customers.person_in_charge.like(f'%{person_in_charge}%'),
+    #         Customers.interaction_content.like(f'%{interaction_content}%'),
+    #         Customers.interaction_result.like(f'%{interaction_result}%'),
+    #         Customers.assistant.like(f'%{assistant}%'),
+    #         Customers.code.like(f'%{code}%'),
+    #         Customers.filled_date <= end_date,
+    #         Customers.filled_date >= start_date)).all()
     # user_data = [{'username':user.username, 'role':user.role,'company_id':user.company_id,'nickname':user.company_name,'team':user.team} for user in users]
-    customer_data = [{'code':customer.code, 'username':customer.username,'bo code':customer.bo_code,'zalo note':customer.zalo_note,'tele note':customer.tele_note,'date': customer.filled_date.isoformat()} for customer in customers]
-    return customer_data
+    # customer_data = [{'code':customer.code, 'username':customer.username,'bo code':customer.bo_code,'zalo note':customer.zalo_note,'tele note':customer.tele_note,'date': customer.filled_date.isoformat()} for customer in customers]
+    customer_data = [{'code':customer.code, 'username':customer.username,'category':customer.category,'bo_code':customer.bo_code,'contact_note':customer.contact_note,'call_note':customer.call_note,'zalo_note':customer.zalo_note,'tele_note':customer.tele_note,'social_note':customer.social_note,'interaction_content':customer.interaction_content,'interaction_result':customer.interaction_result,'person_in_charge':customer.person_in_charge,'filled_date': customer.filled_date.isoformat(),'assistant':customer.assistant} for customer in customers]
+    paginated_data = customer_data[start_index:end_index]
+    paginated_data = customer_data[start_index:end_index]
+
+    return jsonify({'items': paginated_data, 'page': page, 'per_page': per_page, 'total_items': len(customer_data)})
+
+    # return customer_data
 ################################################
 ##Save new record of customer to the Customer table
 @crm_bp.route('/record', methods=['POST'])
@@ -229,6 +305,7 @@ def add_record():
     username = data.get('username')
     category = data.get('category')
     bo_code = data.get('bo_code')
+    contact_note = data.get('contact_note')
     call_note = data.get('call_note')
     zalo_note = data.get('zalo_note')
     tele_note = data.get('tele_note')
@@ -241,7 +318,7 @@ def add_record():
     # Check if the user already exists
     if Customers.query.filter((Customers.code == code)).first():
         return jsonify({"error": "Code is already existed, please try again"}), 409
-    new_customer = Customers(code= code, username=username,category=category,bo_code=bo_code,call_note=call_note,zalo_note=zalo_note,tele_note=tele_note,social_note=social_note,interaction_content=interaction_content, interaction_result = interaction_result, person_in_charge = person_in_charge,filled_date = filled_date,assistant = assistant)
+    new_customer = Customers(code= code, username=username,category=category,bo_code=bo_code,contact_note = contact_note,call_note=call_note,zalo_note=zalo_note,tele_note=tele_note,social_note=social_note,interaction_content=interaction_content, interaction_result = interaction_result, person_in_charge = person_in_charge,filled_date = filled_date,assistant = assistant)
     db.session.add(new_customer)
     try:
         db.session.commit()
@@ -300,58 +377,58 @@ def remove_record(code):
         return jsonify({'error': 'Record not found'}), 404
 
 #####Filter data box
-@crm_bp.route('/record/search', methods=['POST'])
-def filter_data():
-    if not request.form:
-        return jsonify({"error": "Please fill in the form for searching"}), 400
-    data = request.form
-    code = data.get('code')
-    username = data.get('username')
-    category = data.get('category')
-    bo_code = data.get('bo_code')
-    call_note = data.get('call_note')
-    zalo_note = data.get('zalo_note')
-    tele_note = data.get('tele_note')
-    social_note = data.get('social_note')
-    person_in_charge = data.get('person_in_charge')
-    interaction_content = data.get('interaction_content')
-    interaction_result = data.get('interaction_result')
-    assistant = data.get('assistant')
-    start_date_str = data.get('start_date')
-    end_date_str = data.get('end_date')
-    # Check if the user already exists
-    if not username:
-        return jsonify({'error': 'Missing username'}), 400
+# @crm_bp.route('/record/search', methods=['POST'])
+# def filter_data():
+#     if not request.form:
+#         return jsonify({"error": "Please fill in the form for searching"}), 400
+#     data = request.form
+#     code = data.get('code')
+#     username = data.get('username')
+#     category = data.get('category')
+#     bo_code = data.get('bo_code')
+#     call_note = data.get('call_note')
+#     zalo_note = data.get('zalo_note')
+#     tele_note = data.get('tele_note')
+#     social_note = data.get('social_note')
+#     person_in_charge = data.get('person_in_charge')
+#     interaction_content = data.get('interaction_content')
+#     interaction_result = data.get('interaction_result')
+#     assistant = data.get('assistant')
+#     start_date_str = data.get('start_date')
+#     end_date_str = data.get('end_date')
+#     # Check if the user already exists
+#     if not username:
+#         return jsonify({'error': 'Missing username'}), 400
 
-    try:
-        # Parse the date string into a date object
-        start_date = datetime.datetime.strptime(start_date_str, '%Y-%m-%d').date()
-        end_date = datetime.datetime.strptime(end_date_str, '%Y-%m-%d').date()
-    except ValueError:
-        return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+#     try:
+#         # Parse the date string into a date object
+#         start_date = datetime.datetime.strptime(start_date_str, '%Y-%m-%d').date()
+#         end_date = datetime.datetime.strptime(end_date_str, '%Y-%m-%d').date()
+#     except ValueError:
+#         return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
 
-    # Query the database for customers matching the username and date
-    customers = Customers.query.filter(
-        and_(
-            Customers.username.like(f'%{username}%'),
-            Customers.category.like(f'%{category}%'),
-            Customers.bo_code.like(f'%{bo_code}%'),
-            Customers.call_note.like(f'%{call_note}%'),
-            Customers.zalo_note.like(f'%{zalo_note}%'),
-            Customers.tele_note.like(f'%{tele_note}%'),
-            Customers.social_note.like(f'%{social_note}%'),
-            Customers.person_in_charge.like(f'%{person_in_charge}%'),
-            Customers.interaction_content.like(f'%{interaction_content}%'),
-            Customers.interaction_result.like(f'%{interaction_result}%'),
-            Customers.assistant.like(f'%{assistant}%'),
-            Customers.code.like(f'%{code}%'),
-            Customers.filled_date <= end_date,
-            Customers.filled_date >= start_date)).all()
+#     # Query the database for customers matching the username and date
+#     customers = Customers.query.filter(
+#         and_(
+#             Customers.username.like(f'%{username}%'),
+#             Customers.category.like(f'%{category}%'),
+#             Customers.bo_code.like(f'%{bo_code}%'),
+#             Customers.call_note.like(f'%{call_note}%'),
+#             Customers.zalo_note.like(f'%{zalo_note}%'),
+#             Customers.tele_note.like(f'%{tele_note}%'),
+#             Customers.social_note.like(f'%{social_note}%'),
+#             Customers.person_in_charge.like(f'%{person_in_charge}%'),
+#             Customers.interaction_content.like(f'%{interaction_content}%'),
+#             Customers.interaction_result.like(f'%{interaction_result}%'),
+#             Customers.assistant.like(f'%{assistant}%'),
+#             Customers.code.like(f'%{code}%'),
+#             Customers.filled_date <= end_date,
+#             Customers.filled_date >= start_date)).all()
 
-    # Format results
-    results = [{'username': customer.username,'category': customer.category, 'filled_date': customer.filled_date.isoformat()} for customer in customers]
-    sorted_results =  sorted(results, key =  lambda x: x['filled_date'], reverse= True)
-    return jsonify(sorted_results)
+#     # Format results
+#     results = [{'username': customer.username,'category': customer.category, 'filled_date': customer.filled_date.isoformat()} for customer in customers]
+#     sorted_results =  sorted(results, key =  lambda x: x['filled_date'], reverse= True)
+#     return jsonify(sorted_results)
 #############################################
 #################Dropdown List###############
 #/crm/bo
@@ -361,7 +438,7 @@ def filter_data():
 def get_bo():
     boes = BO.query.all()
     # user_data = [{'username':user.username, 'role':user.role,'company_id':user.company_id,'nickname':user.company_name,'team':user.team} for user in users]
-    bo_data = [{'code':bo.bo_code} for bo in boes]
+    bo_data = [{'bo_code':bo.bo_code} for bo in boes]
     return bo_data
 
 #add multiple value to bo code
@@ -422,7 +499,7 @@ def add_category():
         return jsonify({'error':str(e)}),500
 @crm_bp.route('/category/<string:category>', methods= ['DELETE'])
 def remove_category(category):
-    category_name = Category.query.get(category)
+    category_name = Category.query.filter(Category.category == category).first()
     if category_name:
         db.session.delete(category_name)
         db.session.commit()
@@ -432,9 +509,36 @@ def remove_category(category):
 #/crm/contact_note
 #/crm/contact_note [POST]
 #/crm/contact_note [DELETE]
-
-
-
+@crm_bp.route('/contact_note')
+def show_contact_note():
+    contact_notes = Contact_Note.query.all()
+    contact_note_data = [{'contact_note': contact_note.note} for contact_note in contact_notes]
+    return contact_note_data
+@crm_bp.route('/contact_note', methods= ['POST'])
+def add_contact_note():
+    try:
+        data = request.json
+        if not data or not isinstance(data, list):
+            return jsonify({'error': 'Invalid JSON data'})
+        for contact_note in data:
+            if 'contact_note'  not in contact_note:
+                return jsonify({'error':'contact_note is require for each contact_note table'})
+            new_contact_note = Contact_Note(note = contact_note['contact_note'])
+            db.session.add(new_contact_note)
+        db.session.commit()
+        return jsonify({'message':'Category(es) added successfully'}),201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error':str(e)}),500
+@crm_bp.route('/contact_note/<string:contact_note>', methods= ['DELETE'])
+def remove_contact_note(contact_note):
+    contact_note = Contact_Note.query.filter(Contact_Note.note == contact_note).first()
+    if contact_note:
+        db.session.delete(contact_note)
+        db.session.commit()
+        return jsonify({'message': 'contact_note removed successfully'})
+    else:
+        return jsonify({'error':'contact_note not found'}),404
 #Skip to User Managemenet enpoints
 @app.route('/user/<string:username>', methods = ['DELETE'])
 def remove_user(username):
@@ -534,8 +638,10 @@ def test():
     # customers = Customers.query.filter(Customers.username == 'shangđasdasđsd')
     # test_list = [{'username': customer.username, 'datre': customer.filled_date >= date_obj} for customer in customers]
     # # return {'str':date_obj}
-    test_list = []
-    return test_list
+    contact_note = Contact_Note.query.filter(Contact_Note.note == 'sda')
+    notes =  [{'note': note.note} for note in contact_note]
+    
+    return notes
 @crm_bp.route('/')
 def home():
     return "Home Page"
