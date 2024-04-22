@@ -51,8 +51,8 @@
 #/user [POST]
 #/user [PUT]
 #/user [DELETE]
-#/user/register [POST]
-#/user/login [GET,POST]
-#/user/logout\
+#/add_user [POST]
+#/login [GET,POST]
+#/logout\
 ###############IN-and-OUT############
 #/show_session 

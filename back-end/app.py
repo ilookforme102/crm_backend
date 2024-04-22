@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Date, and_
 from datetime import datetime, timezone, timedelta
 import json
+
 app = Flask(__name__)
 # CORS(app)
 app.secret_key = 'f33924fea4dd7123a0daa9d2a7213679'
@@ -84,14 +85,14 @@ class Social_Note(db.Model):
     social_note= db.Column(db.String(255), unique = True, nullable = False)
     def __repr__(self):
         return self.social_note
-class Interaction_Content(db.Model): #Something called Nội dung tương tác
-    __tablename__ = 'db_vn168__interaction_content'
+class Interactive_Content(db.Model): #Something called Nội dung tương tác
+    __tablename__ = 'db_vn168__interactive_content'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    interaction_content= db.Column(db.String(255),unique = True, nullable = False)
+    content= db.Column(db.String(255),unique = True, nullable = False)
     def __repr__(self):
         return self.interaction_content
-class Interaction_Result(db.Model): #Something called Nội dung tương tác
-    __tablename__ = 'db_vn168__crm_interaction_result'
+class Interactive_Result(db.Model): #Something called Nội dung tương tác
+    __tablename__ = 'db_vn168__crm_interactive_result'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     result= db.Column(db.String(255),unique = True, nullable = False)
     def __repr__(self):
@@ -106,6 +107,7 @@ class Customers(db.Model):
     call_note = db.Column(db.String(255), nullable = False)
     zalo_note = db.Column(db.String(255), nullable = False)
     tele_note = db.Column(db.String(255),nullable = False)
+    sms_note = db.Column(db.String(255),nullable = False)
     social_note = db.Column(db.String(255),nullable = False)
     interaction_content = db.Column(db.String(255), nullable = False)
     interaction_result = db.Column(db.String(255), nullable = False)
@@ -124,6 +126,7 @@ class Edit_Customer_Records(db.Model):
     call_note = db.Column(db.String(255), nullable = False)
     zalo_note = db.Column(db.String(255), nullable = False)
     tele_note = db.Column(db.String(255),nullable = False)
+    sms_note = db.Column(db.String(255),nullable = False)
     social_note = db.Column(db.String(255),nullable = False)
     interaction_content = db.Column(db.String(255), nullable = False)
     interaction_result = db.Column(db.String(255), nullable = False)
@@ -212,6 +215,12 @@ def create_tables():
         db.create_all() 
     return 'All tables are created successfully'
 #############################################################
+@crm_bp.route('/show-record')
+def show_records():
+    records = Customers.query.all()
+    # user_data = [{'username':user.username, 'role':user.role,'company_id':user.company_id,'nickname':user.company_name,'team':user.team} for user in users]
+    dates = [{'filled_date':record.filled_date ,"end date":(datetime.now().date()-timedelta(days=10)),"Start date":datetime.strptime("2024-04-23", '%Y-%m-%d').date()} for record in records]
+    return dates    
 #Show all record
 @crm_bp.route('/record')
 def get_records():
@@ -230,6 +239,7 @@ def get_records():
     call_note = data.get('call_note')
     zalo_note = data.get('zalo_note')
     tele_note = data.get('tele_note')
+    sms_note = data.get('sms_note')
     social_note = data.get('social_note')
     person_in_charge = data.get('person_in_charge')
     interaction_content = data.get('interaction_content')
@@ -255,6 +265,7 @@ def get_records():
             'call_note':Customers.call_note.like(f'%{call_note}%'),
             'zalo_note':Customers.zalo_note.like(f'%{zalo_note}%'),
             'tele_note':Customers.tele_note.like(f'%{tele_note}%'),
+            'sms_note':Customers.sms_note.like(f'%{sms_note}%'),
             'social_note':Customers.social_note.like(f'%{social_note}%'),
             'person_in_charge':Customers.person_in_charge.like(f'%{person_in_charge}%'),
             'interaction_content':Customers.interaction_content.like(f'%{interaction_content}%'),
@@ -287,7 +298,7 @@ def get_records():
     #         Customers.filled_date >= start_date)).all()
     # user_data = [{'username':user.username, 'role':user.role,'company_id':user.company_id,'nickname':user.company_name,'team':user.team} for user in users]
     # customer_data = [{'code':customer.code, 'username':customer.username,'bo code':customer.bo_code,'zalo note':customer.zalo_note,'tele note':customer.tele_note,'date': customer.filled_date.isoformat()} for customer in customers]
-    customer_data = [{'code':customer.code, 'username':customer.username,'category':customer.category,'bo_code':customer.bo_code,'contact_note':customer.contact_note,'call_note':customer.call_note,'zalo_note':customer.zalo_note,'tele_note':customer.tele_note,'social_note':customer.social_note,'interaction_content':customer.interaction_content,'interaction_result':customer.interaction_result,'person_in_charge':customer.person_in_charge,'filled_date': customer.filled_date.isoformat(),'assistant':customer.assistant} for customer in customers]
+    customer_data = [{'code':customer.code, 'username':customer.username,'category':customer.category,'bo_code':customer.bo_code,'contact_note':customer.contact_note,'call_note':customer.call_note,'zalo_note':customer.zalo_note,'tele_note':customer.tele_note,'sms_note': customer.sms_note,'social_note':customer.social_note,'interaction_content':customer.interaction_content,'interaction_result':customer.interaction_result,'person_in_charge':customer.person_in_charge,'filled_date': customer.filled_date.isoformat(),'assistant':customer.assistant} for customer in customers]
     paginated_data = customer_data[start_index:end_index]
     paginated_data = customer_data[start_index:end_index]
 
@@ -309,6 +320,7 @@ def add_record():
     call_note = data.get('call_note')
     zalo_note = data.get('zalo_note')
     tele_note = data.get('tele_note')
+    sms_note = data.get('sms_note')
     social_note = data.get('social_note')
     person_in_charge = data.get('person_in_charge')
     interaction_content = data.get('interaction_content')
@@ -318,7 +330,7 @@ def add_record():
     # Check if the user already exists
     if Customers.query.filter((Customers.code == code)).first():
         return jsonify({"error": "Code is already existed, please try again"}), 409
-    new_customer = Customers(code= code, username=username,category=category,bo_code=bo_code,contact_note = contact_note,call_note=call_note,zalo_note=zalo_note,tele_note=tele_note,social_note=social_note,interaction_content=interaction_content, interaction_result = interaction_result, person_in_charge = person_in_charge,filled_date = filled_date,assistant = assistant)
+    new_customer = Customers(code= code, username=username,category=category,bo_code=bo_code,contact_note = contact_note,call_note=call_note,zalo_note=zalo_note,tele_note=tele_note,sms_note = sms_note,social_note=social_note,interaction_content=interaction_content, interaction_result = interaction_result, person_in_charge = person_in_charge,filled_date = filled_date,assistant = assistant)
     db.session.add(new_customer)
     try:
         db.session.commit()
@@ -341,6 +353,7 @@ def edit_record(code):
     record.call_note = data.get('call_note')
     record.zalo_note = data.get('zalo_note')
     record.tele_note = data.get('tele_note')
+    record.sms_note = data.get('sms_note')
     record.social_note = data.get('social_note')
     record.person_in_charge = data.get('person_in_charge')
     record.interaction_content = data.get('interaction_content')
@@ -357,6 +370,7 @@ def edit_record(code):
             'call_note' : record.call_note,
             'zalo_note' : record.zalo_note,
             'tele_note' : record.tele_note,
+            'sms' : record.sms_note,
             'social_note' : record.social_note,
             'person_in_charge' : record.person_in_charge,
             'interaction_content' : record.interaction_content,
@@ -539,21 +553,245 @@ def remove_contact_note(contact_note):
         return jsonify({'message': 'contact_note removed successfully'})
     else:
         return jsonify({'error':'contact_note not found'}),404
-#Skip to User Managemenet enpoints
-@app.route('/user/<string:username>', methods = ['DELETE'])
-def remove_user(username):
-    if 'role' in session and session['role']:
-        username = Customers.query.get(username)
-        if username:
-            db.session.delete(username)
-            db.session.commit()
-            return jsonify({'message': 'User deleted successfully'})
-        else:
-            # If the user does not exist, return a 404 error
-            return jsonify({'error': 'Record not found'}), 404
+#/crm/call_note 
+#/crm/call_note [POST]
+#/crm/call_note [DELETE]
+@crm_bp.route("/call_note") #GET
+def show_call_note():
+    call_notes = Call_Note.query.all()
+    call_note_data = [{'call_note': call_note.call_note} for call_note in call_notes]
+    return call_note_data
+@crm_bp.route('/call_note', methods= ['POST']) #POST
+def add_call_note():
+    try:
+        data = request.json
+        if not data or not isinstance(data, list):
+            return jsonify({'error': 'Invalid JSON data'})
+        for call_note in data:
+            if 'call_note'  not in call_note:
+                return jsonify({'error':'call_note is require for each call_note table'})
+            new_call_note = Call_Note(call_note = call_note['call_note'])
+            db.session.add(new_call_note)
+        db.session.commit()
+        return jsonify({'message':'Category(es) added successfully'}),201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error':str(e)}),500
+@crm_bp.route('/call_note/<string:call_note>', methods= ['DELETE']) #DELETE
+def remove_call_note(call_note):
+    call_note = Call_Note.query.filter(Call_Note.call_note == call_note).first()
+    if call_note:
+        db.session.delete(call_note)
+        db.session.commit()
+        return jsonify({'message': 'call_note removed successfully'})
     else:
-        return  jsonify({'error': 'unauthenticated login'}), 401
- 
+        return jsonify({'error':'call_note not found'}),404
+
+#/crm/zalo_note
+#/crm/zalo_note [POST]
+#/crm/zalo_note [DELETE]
+
+@crm_bp.route("/zalo_note") #GET
+def show_zalo_note():
+    zalo_notes = Zalo_Note.query.all()
+    zalo_note_data = [{'zalo_note': zalo_note.zalo_note} for zalo_note in zalo_notes]
+    return zalo_note_data
+@crm_bp.route('/zalo_note', methods= ['POST']) #POST
+def add_zalo_note():
+    try:
+        data = request.json
+        if not data or not isinstance(data, list):
+            return jsonify({'error': 'Invalid JSON data'})
+        for zalo_note in data:
+            if 'zalo_note'  not in zalo_note:
+                return jsonify({'error':'zalo_note is require for each call_note table'})
+            new_zalo_note = Zalo_Note(zalo_note = zalo_note['zalo_note'])
+            db.session.add(new_zalo_note)
+        db.session.commit()
+        return jsonify({'message':'Category(es) added successfully'}),201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error':str(e)}),500
+@crm_bp.route('/zalo_note/<string:zalo_note>', methods= ['DELETE']) #DELETE
+def remove_zalo_note(zalo_note):
+    zalo_note = Zalo_Note.query.filter(Zalo_Note.zalo_note == zalo_note).first()
+    if zalo_note:
+        db.session.delete(zalo_note)
+        db.session.commit()
+        return jsonify({'message': 'call_note removed successfully'})
+    else:
+        return jsonify({'error':'call_note not found'}),404
+#/crm/tele_note 
+#/crm/tele_note [POST]
+#/crm/tele_note [DELETE]
+@crm_bp.route("/tele_note") #GET
+def show_tele_note():
+    tele_notes = Tele_Note.query.all()
+    tele_note_data = [{'tele_note': tele_note.tele_note} for tele_note in tele_notes]
+    return tele_note_data
+@crm_bp.route('/tele_note', methods= ['POST']) #POST
+def add_tele_note():
+    try:
+        data = request.json
+        if not data or not isinstance(data, list):
+            return jsonify({'error': 'Invalid JSON data'})
+        for tele_note in data:
+            if 'tele_note'  not in tele_note:
+                return jsonify({'error':'tele_note is require for each tele_note table'})
+            new_tele_note = Tele_Note(tele_note = tele_note['tele_note'])
+            db.session.add(new_tele_note)
+        db.session.commit()
+        return jsonify({'message':'Category(es) added successfully'}),201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error':str(e)}),500
+@crm_bp.route('/tele_note/<string:tele_note>', methods= ['DELETE']) #DELETE
+def remove_tele_note(tele_note):
+    tele_note = Tele_Note.query.filter(Tele_Note.tele_note == tele_note).first()
+    if tele_note:
+        db.session.delete(tele_note)
+        db.session.commit()
+        return jsonify({'message': 'tele_note removed successfully'})
+    else:
+        return jsonify({'error':'tele_note not found'}),404
+#/crm/sms_note 
+#/crm/sms_note [POST]
+#/crm/sms_note [DELETE    
+@crm_bp.route("/sms_note") #GET
+def show_sms_note():
+    sms_notes = SMS_Note.query.all()
+    sms_note_data = [{'sms_note': sms_note.sms_note} for sms_note in sms_notes]
+    return sms_note_data
+@crm_bp.route('/sms_note', methods= ['POST']) #POST
+def add_sms_note():
+    try:
+        data = request.json
+        if not data or not isinstance(data, list):
+            return jsonify({'error': 'Invalid JSON data'})
+        for sms_note in data:
+            if 'sms_note'  not in sms_note:
+                return jsonify({'error':'sms_note is require for each sms_note table'})
+            new_sms_note = SMS_Note(sms_note = sms_note['sms_note'])
+            db.session.add(new_sms_note)
+        db.session.commit()
+        return jsonify({'message':'Category(es) added successfully'}),201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error':str(e)}),500
+@crm_bp.route('/sms_note/<string:sms_note>', methods= ['DELETE']) #DELETE
+def remove_sms_note(sms_note):
+    sms_note = SMS_Note.query.filter(SMS_Note.sms_note == sms_note).first()
+    if sms_note:
+        db.session.delete(sms_note)
+        db.session.commit()
+        return jsonify({'message': 'sms_note removed successfully'})
+    else:
+        return jsonify({'error':'sms_note not found'}),404
+
+#/crm/social_note 
+#/crm/social_note [POST]
+#/crm/social_note [DELETE]
+@crm_bp.route("/social_note") #GET
+def show_social_note():
+    social_notes = Social_Note.query.all()
+    social_note_data = [{'social_note': social_note.social_note} for social_note in social_notes]
+    return social_note_data
+@crm_bp.route('/social_note', methods= ['POST']) #POST
+def add_social_note():
+    try:
+        data = request.json
+        if not data or not isinstance(data, list):
+            return jsonify({'error': 'Invalid JSON data'})
+        for social_note in data:
+            if 'social_note'  not in social_note:
+                return jsonify({'error':'social_note is require for each social_note table'})
+            new_social_note = Social_Note(social_note = social_note['social_note'])
+            db.session.add(new_social_note)
+        db.session.commit()
+        return jsonify({'message':'Category(es) added successfully'}),201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error':str(e)}),500
+@crm_bp.route('/social_note/<string:social_note>', methods= ['DELETE']) #DELETE
+def remove_social_note(social_note):
+    social_note = Social_Note.query.filter(Social_Note.social_note == social_note).first()
+    if social_note:
+        db.session.delete(social_note)
+        db.session.commit()
+        return jsonify({'message': 'social_note removed successfully'})
+    else:
+        return jsonify({'error':'social_note not found'}),404
+#/crm/interactive_content 
+#/crm/interactive_content [POST]
+#/crm/interactive_content [DELETE]
+@crm_bp.route("/interactive_content") #GET
+def show_interactive_content():
+    contents = Interactive_Content.query.all()
+    interactive_content_data = [{'content': content.content} for content in contents]
+    return interactive_content_data
+@crm_bp.route('/interactive_content', methods= ['POST']) #POST
+def add_interactive_content():
+    try:
+        data = request.json
+        if not data or not isinstance(data, list):
+            return jsonify({'error': 'Invalid JSON data'})
+        for content in data:
+            if 'content'  not in content:
+                return jsonify({'error':'content is require for each content table'})
+            new_interactive_content = Interactive_Content(content = content['content'])
+            db.session.add(new_interactive_content)
+        db.session.commit()
+        return jsonify({'message':'interactive_content(s) added successfully'}),201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error':str(e)}),500
+@crm_bp.route('/interactive_content/<string:content>', methods= ['DELETE']) #DELETE
+def remove_interactive_content(content):
+    interactive_content = Interactive_Content.query.filter(Interactive_Content.content == content).first()
+    if interactive_content:
+        db.session.delete(interactive_content)
+        db.session.commit()
+        return jsonify({'message': 'content removed successfully'})
+    else:
+        return jsonify({'error':'content not found'}),404
+#/crm/interactive_result 
+#/crm/interactive_result [POST]
+#/crm/interactive_result [DELETE]
+@crm_bp.route("/interactive_result") #GET
+def show_interactive_result():
+    results = Interactive_Result.query.all()
+    interactive_result_data = [{'result': result.result} for result in results]
+    return interactive_result_data
+@crm_bp.route('/interactive_result', methods= ['POST']) #POST
+def add_interactive_result():
+    try:
+        data = request.json
+        if not data or not isinstance(data, list):
+            return jsonify({'error': 'Invalid JSON data'})
+        for result in data:
+            if 'result'  not in result:
+                return jsonify({'error':'result is require for each result table'})
+            result = Interactive_Result(result = result['result'])
+            db.session.add(result)
+        db.session.commit()
+        return jsonify({'message':'interactive_result(s) added successfully'}),201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error':str(e)}),500
+@crm_bp.route('/interactive_result/<string:result>', methods= ['DELETE']) #DELETE
+def remove_interactive_result(result):
+    result = Interactive_Result.query.filter(Interactive_Result.result == result).first()
+    if result:
+        db.session.delete(result)
+        db.session.commit()
+        return jsonify({'message': 'result removed successfully'})
+    else:
+        return jsonify({'error':'result not found'}),404
+
+
+
+#######################################################################################################
+#Skip to User Managemenet enpoints
 @app.route('/user')
 def show_users():
     users = User.query.all()
@@ -585,6 +823,19 @@ def add_user():
         except Exception as e:
             db.session.rollback()  # Roll back the transaction if an error occurs
             return str(e)
+@app.route('/user/<string:username>', methods = ['DELETE'])
+def remove_user(username):
+    if 'role' in session and session['role']:
+        username = Customers.query.get(username)
+        if username:
+            db.session.delete(username)
+            db.session.commit()
+            return jsonify({'message': 'User deleted successfully'})
+        else:
+            # If the user does not exist, return a 404 error
+            return jsonify({'error': 'Record not found'}), 404
+    else:
+        return  jsonify({'error': 'unauthenticated login'}), 401
 # Middleware to check if the user is authenticated
 @app.before_request
 def check_authentication():
